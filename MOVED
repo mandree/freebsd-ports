@@ -4571,3 +4571,5 @@ japanese/fcitx5-anthy@original|japanese/fcitx5-anthy|2025-06-29|Has unflavorized
 japanese/fcitx5-anthy@unicode|japanese/fcitx5-anthy|2025-06-29|Has unflavorized: japanese/anthy was removed and only japanese/anthy-unicode is supported
 japanese/ibus-anthy@original|japanese/ibus-anthy|2025-06-29|Has unflavorized: japanese/anthy was removed and only japanese/anthy-unicode is supported
 japanese/ibus-anthy@unicode|japanese/ibus-anthy|2025-06-29|Has unflavorized: japanese/anthy was removed and only japanese/anthy-unicode is supported
+misc/e2fsprogs-libuuid||2025-07-03|Use misc/libuuid (from util-linux) instead
+filesystems/e2fsprogs-libblkid||2025-07-03|Use filesystems/libblkid (from util-linux) instead
