@@ -1,6 +1,6 @@
 PORTNAME=	libewf
 PORTVERSION=	20140816
-PORTREVISION=	1
+PORTREVISION=	2
 CATEGORIES=	devel
 MASTER_SITES=	https://github.com/libyal/libewf-legacy/releases/download/${PORTVERSION}/ \
 		LOCAL/antoine

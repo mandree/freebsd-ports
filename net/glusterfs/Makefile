@@ -1,6 +1,6 @@
 PORTNAME=	glusterfs
 PORTVERSION=	8.4
-PORTREVISION=	4
+PORTREVISION=	5
 CATEGORIES=	net
 MASTER_SITES=	http://bits.gluster.org/pub/gluster/glusterfs/src/
 
