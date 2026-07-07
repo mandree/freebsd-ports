@@ -220,19 +220,21 @@ you update your ports collection, before attempting any port upgrades.
   AFFECTS: users of mail/bogofilter
   AUTHOR: mandree@FreeBSD.org
 
-  Due to the LMDB 1.0 incompatibility (see 20260702 entry for
-  databases/lmdb), mail/bogofilter currently depends on lmdb0
-  so it can continue using existing wordlist.lmdb databases.
+  Due to the LMDB 0.9/1.0 incompatibility (see 20260702 entry for
+  databases/lmdb), mail/bogofilter currently depends on lmdb0 so it can
+  continue using existing wordlist.lmdb databases.
 
   For users who wish to transition to LMDB 1.0.0, please:
+  - if bogofilter is part of your mail system, stop the latter
   - identify all wordlist.lmdb files, and
   - for each of them, run:
-    bogoutil -d /path/to/wordlist.ldmb >/path/to/wordlist.txt
-  - THEN you can install to mail/bogofilter-lmdb1,
-  - for each of the wordlist.lmdb files, move them to a safe
-    place, and recreate them from the text file, i.e.
+    bogoutil -d /path/to/wordlist.ldmb >/safe/place/wordlist.txt
+  - THEN you can install mail/bogofilter-lmdb1, replacing bogofilter
+  - for each of the wordlist.lmdb files, move them to another safe
+    place as backup, and recreate them from the text file, i.e.
     for each, run:
-    bogoutil -l /path/to/wordlist.lmdb </path/to/wordlist.txt
+    bogoutil -l /path/to/wordlist.lmdb </safe/place/wordlist.txt
+  - if you stopped the mail system, restart it
 
   At a later point, we will upgrade mail/bogofilter to refer
   to lmdb 1.0 and remove the bogofilter-lmdb1 port.
