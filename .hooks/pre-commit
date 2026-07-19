@@ -1,15 +1,24 @@
 #!/bin/sh
 #
-# Runs every hook in pre-commit.d/ until the first failure
+# Runs every hook in pre-commit.d/ until the first failure,
+# or exhaustively if PRE_COMMIT_KEEP_GOING is a nonempty environment variable
 #
 
 hook_directory=$(realpath $(dirname $0))
 
+fail=0
 for hook in ${hook_directory}/pre-commit.d/* ; do
 	if [ -x "${hook}" ] ; then
 		${hook}
 		if [ $? -ne 0 ] ; then
-			exit 1
+			if [ -z "$PRE_COMMIT_KEEP_GOING" ] ; then
+				echo >&2 "[pre-commit] INFO: Failing hook was ${hook}."
+				echo >&2 "[pre-commit] INFO: You can set PRE_COMMIT_KEEP_GOING=1 in the environment to see all errors."
+				exit 1
+			else
+				fail=1
+			fi
 		fi
 	fi
 done
+exit ${fail}
