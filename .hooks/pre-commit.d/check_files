@@ -18,18 +18,23 @@ newish_files=$(git diff --name-only --cached --diff-filter=ACR | grep -E "^${cat
 
 status=0
 if [ $? -eq 0 ] ; then
+	IFS=$'\n'
 	for newish_file in ${newish_files} ; do
-		category=$(echo "${newish_file}" | awk -F '/' '{print $1}')
-		port=$(echo "${newish_file}" | awk -F '/' '{print $2}')
-		file=$(echo "${newish_file}" | awk -F '/' '{print $3}')
-		valid=$(echo "${file}" | grep -Eq '^((Makefile|distinfo|pkg-)(.*))|(.*\.mk)$')
-		if [ $? -ne 0 ] ; then
-			pre_commit_error "ERROR: invalid file '${file}' in '${category}/${port}'"
+		IFS=/ read -r category port file <<-EOT
+			$(printf %s "${newish_file}")
+		EOT
+		case "${file}" in
+		Makefile*|distinfo*|pkg-*|*.mk)
+			# these are good
+			;;
+		*)
+			pre_commit_error "invalid file '${file}' in '${category}/${port}'"
 			status=1
-		fi
+			;;
+	esac
 	done
 fi
-if [ ${status} -eq 1 ] ; then
+if [ ${status} -ne 0 ] ; then
 	error "             Consider moving non-standard files to files/ or force-ignore this hook."
 	exit 1
 fi

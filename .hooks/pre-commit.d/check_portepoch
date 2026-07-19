@@ -24,6 +24,7 @@ check_epoch() {
 	fi
 }
 
+IFS=$'\n'
 modified_makefiles=$(git diff --name-only --cached --diff-filter=M -GPORTEPOCH | grep -E '^[^/]+/[^/]+/Makefile$')
 if [ $? -eq 0 ] ; then
 	for modified_makefile in ${modified_makefiles} ; do
