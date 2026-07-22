@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Check that no files contain "git merge" conflict markers.
+# We cannot check for the ======= because that would cause
+# false positives with .md and .rst files.
+#
+
+common_functions="$(realpath "$(dirname "$0")")/common.sh"
+if [ -r "${common_functions}" ]; then
+	. "${common_functions}"
+fi
+
+IFS=$'\n'
+fail=0
+while read -r filename ; do
+	if [ -z "${filename}" ] ; then continue ; fi
+	if grep -q -E '^(<<<<<<<|[|]{7}|>>>>>>>)( |$)' "${filename}" ; then
+		pre_commit_error "File '${filename}' contains diff/merge conflict markers."
+		fail=1
+	fi
+done <<-EOT
+	$(git diff --name-only --cached --diff-filter=ACRMU)
+EOT
+exit ${fail}
