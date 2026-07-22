@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# Check that no binary files are being added
+# (based on a heuristic, we're avoiding file(1)
+# because we'd need to parse its output, too)
+#
+# We check with od(1) and grep(1) for control
+# characters atypical for text files in the first 16 kibiB
+#
+
+common_functions="$(realpath "$(dirname "$0")")/common.sh"
+if [ -r "${common_functions}" ]; then
+	. "${common_functions}"
+fi
+
+IFS=$'\n'
+# we need to write this backwards with a here-string
+# so that the "fail" value is in the main shell, not a
+# sub shell
+
+fail=0
+while read -r filename ; do
+	if [ -z "${filename}" ] ; then continue ; fi
+	if od -An -tx1 -v -N 16384 "${filename}" | \
+		grep -E -q '(00|01|02|03|04|05|06|07|08|0e|0f|10|11|12|13|14|15|16|17|18|19|1a|1c|1d|1e|1f|7f)'
+	then
+		pre_commit_error "File $(printf %s "${filename}" | sed 's,\\,\\\\,g') seems to be binary."
+		fail=1
+	fi
+done <<-EOT
+	$(git diff --name-only --cached --diff-filter=ACRM)
+EOT
+exit ${fail}
