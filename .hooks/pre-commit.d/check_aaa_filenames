@@ -1,7 +1,9 @@
 #!/bin/sh
 #
 # Check that no files with blanks, quotes, or backslahes in them are added,
-# these would break other hook scripts
+# these would break other hook scripts;
+# also anything that git considers "unusual" characters and leads to
+# quoting will break most commands. So let's break out early.
 #
 
 common_functions="$(realpath "$(dirname "$0")")/common.sh"
@@ -10,22 +12,25 @@ if [ -r "${common_functions}" ]; then
 fi
 
 IFS=$'\n'
-git diff --name-only --cached --diff-filter=ACRM | \
-(
+git diff --name-only --cached --diff-filter=ACRM | ( # sub-shell so we can set -- ${var}
 	fail=0
 	while read -r filename ; do
-		case "$filename" in
+		case "${filename}" in
 		*[\'\"\\]*)
-			pre_commit_error "File name $(printf %s "$filename" | sed 's,\\,\\\\,g') contains invalid characters. Rename the file."
+			pre_commit_error "File name $(printf %s "${filename}" | sed 's,\\,\\\\,g') contains invalid characters. Rename the file."
 			fail=1
 			;;
 		esac
-		IFS=$' \t'
-		set -- $filename
+		IFS=$' \a\b\f\r\t\v'
+		# shellcheck disable=SC2086 # we do want to split ${filename} here
+		set -- ${filename}
 		if [ $# -gt 1 ] ; then
-			pre_commit_error "File name '$filename' contains whitespace. Rename the file."
+			pre_commit_error "File name '${filename}' contains whitespace. Rename the file."
 			fail=1
 		fi
 	done
+	if [ ${fail} -ne 0 ] && [ -n "${PRE_COMMIT_KEEP_GOING}" ] ; then
+		pre_commit_error "Note that subsequent test scripts in this pre-commit hook may fail to access such files."
+	fi
 	exit ${fail}
 ) || exit $?
