@@ -8,17 +8,61 @@ if [ -r "${common_functions}" ]; then
 	. "${common_functions}"
 fi
 
-newish_makefiles=$(git diff --name-only --cached --diff-filter=ACR | grep -E '^[^/]+/[^/]+/Makefile$' | escape_modern_regex)
-if [ $? -eq 0 ] ; then
+warned=  # used to avoid duplicate warnings from category makefiles check
+fail=0
+if newish_makefiles="$(git diff --name-only --cached --diff-filter=ACR \
+		     | grep -E '^[^/]+/[^/]+/Makefile$' \
+		     | escape_modern_regex)"
+then
 	IFS=$'\n'
+	LF=$'\n'
 	for newish_makefile in ${newish_makefiles} ; do
 		IFS=/ read -r category port _tail <<-EOT
 			$(printf %s "${newish_makefile}")
 		EOT
-		grep -q -E "^[[:space:]]+SUBDIR[[:space:]]\+=[[:space:]]*${port}\$" ${category}/Makefile
-		if [ $? -ne 0 ] ; then
+		if !  grep -q -E "^[[:space:]]+SUBDIR[[:space:]]\+=[[:space:]]*${port}\$" "${category}"/Makefile
+		then
 			pre_commit_error "Missing 'SUBDIR += ${port}' in ${category}/Makefile"
-			exit 1
+			warned="${warned}${warned+${LF}}${category}/${port}"
+			fail=1
 		fi
 	done
 fi
+
+# now check category makefiles
+if category_makefiles="$(git diff --name-only --cached --diff-filter=ACRM \
+		   | grep -E '^[^/]+/Makefile$' \
+		   | escape_modern_regex)"
+then
+	IFS=$'\n'
+	if ! tempdir="$(mktemp -d -t "check_category_makefiles")" ; then
+		echo "[pre-commit] failed to create tempdir"
+		exit 2
+	fi
+	trap 'rm -r "${tempdir}"' EXIT
+	for category in ${category_makefiles} ; do
+		category=${category%/Makefile}
+		git ls-files --cached "${category}" | cut -f 2 -d/ | uniq | LC_ALL=C sort >"${tempdir}/ports"
+		make -C "${category}" -V SUBDIR | tr ' ' $'\n' | LC_ALL=C sort >"${tempdir}/subdir"
+		missing="$(LC_ALL=C comm -2 -3 "${tempdir}/ports" "${tempdir}/subdir")"
+		excess="$(LC_ALL=C comm -1 -3 "${tempdir}/ports" "${tempdir}/subdir")"
+		printf '%s\n' "${warned}" >"${tempdir}/warned"
+		if [ -n "${missing}" ] ; then
+			for port in ${missing} ; do
+				if [ Makefile = "${port}" ] ; then continue ; fi
+				# duplicate check
+				if grep -q -F "${category}/${port}" "${tempdir}/warned" ; then continue ; fi
+				pre_commit_error "Missing 'SUBDIR += ${port}' in ${category}/Makefile"
+				fail=1
+			done
+		fi
+		if [ -n "${excess}" ] ; then
+			for port in ${excess} ; do
+				pre_commit_error "Extra 'SUBDIR += ${port}' in ${category}/Makefile, please remove"
+				fail=1
+			done
+		fi
+	done
+fi
+
+exit ${fail}
