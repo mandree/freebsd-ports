@@ -1,9 +1,9 @@
 error() {
-	echo -e "$*" > /dev/stderr
+	echo -e "$@" > /dev/stderr
 }
 
 pre_commit_error() {
-	error "[pre-commit] ERROR: $*"
+	error "[pre-commit] ERROR:" "$@"
 }
 
 escape_modern_regex() {
