@@ -8,16 +8,17 @@ if [ -r "${common_functions}" ]; then
 	. "${common_functions}"
 fi
 
-makefiles=$(git diff --name-only --cached --diff-filter=ACMR | grep -E '^[^/]+/[^/]+/Makefile$')
-if [ $? -eq 0 ] ; then
+if makefiles=$(git diff --name-only --cached --diff-filter=ACMR | grep -E '^[^/]+/[^/]+/Makefile$') ; then
 	IFS=$'\n'
 	for makefile in ${makefiles} ; do
-		read -r firstline <${makefile}
-		case "${firstline}"
-		in *"Created by"*:*)
-			pre_commit_error "${makefile} contains obsolete 'Created by' line\n" \
-			        "                   Please remove the the line, and append:\n\n" \
-			        "                   - Removed 'Created by ${created_by}'.\n\n" \
+		IFS=:
+		read -r tag created_by <<-EOT
+			$(head -n1 "${makefile}")
+		EOT
+		case "${tag}" in *"Created by"*)
+			pre_commit_error "File ${makefile} contains an obsolete 'Created by' line\n" \
+			        "                   Please remove the line, and append:\n\n" \
+			        "                   - Removed 'Created by:${created_by}'.\n\n" \
 			        "                   to your commit message."
 			exit 1
 			;;
