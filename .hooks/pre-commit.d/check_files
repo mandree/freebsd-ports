@@ -13,11 +13,10 @@ if [ -r "${common_functions}" ]; then
 	. "${common_functions}"
 fi
 
-category_regex="($(make -VSUBDIR | sed 's# #\|#g'))"
-newish_files=$(git diff --name-only --cached --diff-filter=ACR | grep -E "^${category_regex}/[^/]+/[^/]+$")
-
 status=0
-if [ $? -eq 0 ] ; then
+set -o pipefail
+category_regex="($(make -VSUBDIR | sed 's# #\|#g'))" || exit 2
+if newish_files=$(git diff --name-only --cached --diff-filter=ACR | grep -E "^${category_regex}/[^/]+/[^/]+$") ; then
 	IFS=$'\n'
 	for newish_file in ${newish_files} ; do
 		IFS=/ read -r category port file <<-EOT
@@ -36,5 +35,5 @@ if [ $? -eq 0 ] ; then
 fi
 if [ ${status} -ne 0 ] ; then
 	error "             Consider moving non-standard files to files/ or force-ignore this hook."
-	exit 1
+	exit ${status}
 fi
